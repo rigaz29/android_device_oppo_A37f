@@ -35,7 +35,14 @@ TARGET_NO_BOOTLOADER := true
 
 # Kernel
 BOARD_KERNEL_BASE := 0x80000000
-BOARD_KERNEL_CMDLINE := console=ttyHSL0,115200,n8 androidboot.console=ttyHSL0 androidboot.hardware=qcom ehci-hcd.park=3 androidboot.bootdevice=7824900.sdhci lpm_levels.sleep_disabled=1 androidboot.selinux=permissive ramoops.mem_address=0x9ff00000 ramoops.mem_size=0x400000 ramoops.record_size=0x40000 ramoops.console_size=0x100000 ramoops.pmsg_size=0x40000 ramoops.dump_oops=1
+# ramoops.ecc=1 — WAJIB SAMA dengan device tree LOS (rb_device_oppo_A37).
+#
+# ECC mengubah TATA LETAK buffer, bukan cuma cara membacanya (ram_core.c:212
+# memangkas buffer_size dan menaruh paritas di ekornya). Recovery ini MEMBACA
+# buffer yang ditulis kernel ROM; kalau salah satu memakai ECC dan yang lain
+# tidak, pembaca akan memperlakukan data log sebagai paritas dan "mengoreksi"
+# isinya jadi rusak. Ubah keduanya atau tidak sama sekali.
+BOARD_KERNEL_CMDLINE := console=ttyHSL0,115200,n8 androidboot.console=ttyHSL0 androidboot.hardware=qcom ehci-hcd.park=3 androidboot.bootdevice=7824900.sdhci lpm_levels.sleep_disabled=1 androidboot.selinux=permissive ramoops.mem_address=0x9ff00000 ramoops.mem_size=0x400000 ramoops.record_size=0x40000 ramoops.console_size=0x100000 ramoops.pmsg_size=0x40000 ramoops.dump_oops=1 ramoops.ecc=1
 BOARD_KERNEL_PAGESIZE := 2048
 BOARD_KERNEL_TAGS_OFFSET := 0x00000100
 BOARD_RAMDISK_OFFSET := 0x02000000
