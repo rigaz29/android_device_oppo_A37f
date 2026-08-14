@@ -5,23 +5,23 @@
 # Common Partitions
 /dev/block/bootdevice/by-name/system         /system           ext4  
 /dev/block/bootdevice/by-name/system         /system_image     emmc
-/dev/block/bootdevice/by-name/persist        /persist          ext4 flags=display="Persist";backup=1
-/dev/block/bootdevice/by-name/userdata       /data             ext4 length=-16384,encryptable=footer
+/dev/block/bootdevice/by-name/persist        /persist          ext4  defaults  flags=display="Persist";backup=1
+/dev/block/bootdevice/by-name/userdata       /data             ext4  defaults  length=-16384,encryptable=footer
 /dev/block/bootdevice/by-name/cache          /cache            ext4
-/dev/block/bootdevice/by-name/aboot	     /aboot            emmc flags=display="ABoot";backup=1;    
-/dev/block/bootdevice/by-name/boot           /boot             emmc flags=display="Boot";backup=1  
-/dev/block/bootdevice/by-name/recovery       /recovery         emmc flags=display="Recovery";backup=1;
+/dev/block/bootdevice/by-name/aboot          /aboot            emmc  defaults  flags=display="ABoot";backup=1;
+/dev/block/bootdevice/by-name/boot           /boot             emmc  defaults  flags=display="Boot";backup=1
+/dev/block/bootdevice/by-name/recovery       /recovery         emmc  defaults  flags=display="Recovery";backup=1;
 /dev/block/bootdevice/by-name/misc           /misc             emmc
-/dev/block/bootdevice/by-name/LOGO           /logo             emmc flags=display="LOGO";backup=1;
-/dev/block/bootdevice/by-name/modemst1	     /modem_st1        emmc flags=display="MODEM1";backup=1;
-/dev/block/bootdevice/by-name/modemst2	     /modem_st2        emmc flags=display="MODEM2";backup=1;
+/dev/block/bootdevice/by-name/LOGO           /logo             emmc  defaults  flags=display="LOGO";backup=1;
+/dev/block/bootdevice/by-name/modemst1       /modem_st1        emmc  defaults  flags=display="MODEM1";backup=1;
+/dev/block/bootdevice/by-name/modemst2       /modem_st2        emmc  defaults  flags=display="MODEM2";backup=1;
 /usb-otg         vfat              /dev/block/sda1      /dev/block/sda              flags=removable;storage;display=USB-OTG
 
 # OPPO Partitions
-/dev/block/bootdevice/by-name/DRIVER	     /driver	       emmc flags=display="DRIVER";backup=1;
-/dev/block/bootdevice/by-name/reserve4	     /reserve4         emmc flags=display="RESERVE4";backup=1;
-/dev/block/bootdevice/by-name/oppodycnvbk    /oppodycnvbk      emmc flags=display="OPPODYCNVBK";backup=1;
-/dev/block/bootdevice/by-name/oppostanvbk    /static_nv_bk     emmc flags=display="OPPOSTANVBK";backup=1;
-/dev/block/mmcblk1p1    /external_sd      auto flags=display="Micro SDCard";storage;wipeingui;removable
-/dev/block/bootdevice/by-name/fsg	     /fsg	       emmc flags=display="Efs";backup=1
-/dev/block/bootdevice/by-name/oem	     /oem              emmc flags=display="OEM";backup=1
+/dev/block/bootdevice/by-name/DRIVER         /driver           emmc  defaults  flags=display="DRIVER";backup=1;
+/dev/block/bootdevice/by-name/reserve4       /reserve4         emmc  defaults  flags=display="RESERVE4";backup=1;
+/dev/block/bootdevice/by-name/oppodycnvbk    /oppodycnvbk      emmc  defaults  flags=display="OPPODYCNVBK";backup=1;
+/dev/block/bootdevice/by-name/oppostanvbk    /static_nv_bk     emmc  defaults  flags=display="OPPOSTANVBK";backup=1;
+/dev/block/mmcblk1p1                         /external_sd      auto  defaults  flags=display="Micro SDCard";storage;wipeingui;removable
+/dev/block/bootdevice/by-name/fsg            /fsg              emmc  defaults  flags=display="Efs";backup=1
+/dev/block/bootdevice/by-name/oem            /oem              emmc  defaults  flags=display="OEM";backup=1
