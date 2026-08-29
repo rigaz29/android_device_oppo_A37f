@@ -73,7 +73,26 @@ BOARD_KERNEL_IMAGE_NAME := Image
 TARGET_PREBUILT_KERNEL := $(DEVICE_PATH)/prebuilt/Image
 BOARD_MKBOOTIMG_ARGS += --ramdisk_offset $(BOARD_RAMDISK_OFFSET) --tags_offset $(BOARD_KERNEL_TAGS_OFFSET) --dt $(DEVICE_PATH)/prebuilt/dt.img
 
-BOARD_RAMDISK_USE_XZ := true
+# LZMA, BUKAN XZ. Rujukan a6010 memakai XZ, tapi kernel MEREKA punya
+# CONFIG_RD_XZ + XZ_DEC + XZ_DEC_ARM; kernel A37 hanya punya CONFIG_RD_BZIP2 dan
+# CONFIG_RD_LZMA (lineageos_a37f_defconfig:27-28).
+#
+# Menyalin XZ dari rujukan membuat kernel PANIC saat memuat ramdisk, sebelum
+# userspace sama sekali. Terbaca dari dmesg-ramoops boot yang gagal:
+#
+#   Process swapper/4 (Pid: 1)
+#   Call trace:
+#     [<(null)>] (null)
+#     [<...>] initrd_load+0x0/0x2d4
+#     [<...>] prepare_namespace+0xdc
+#     [<...>] kernel_init_freeable
+#   Code: (bad PC value)
+#
+# LZMA adalah yang dipakai device tree basis 9.0 dan terbukti boot di perangkat
+# ini. Alternatifnya menambahkan CONFIG_RD_XZ ke kernel, tapi itu menuntut
+# membangun ulang kernel dan mem-flash boot.img -- perubahan yang jauh lebih
+# luas untuk masalah yang selesai dengan satu baris di sini.
+BOARD_RAMDISK_USE_LZMA := true
 
 # Filesystem
 BOARD_FLASH_BLOCK_SIZE := 131072
@@ -89,7 +108,10 @@ TARGET_USERIMAGES_USE_EXT4 := true
 # dibangun sehingga TWRP tidak bisa memformatnya.
 TARGET_USERIMAGES_USE_F2FS := true
 TARGET_USES_MKE2FS := true
-TW_INCLUDE_FUSE_NTFS := true
+# NTFS dimatikan demi ruang. Ini disalin dari rujukan a6010 dan TIDAK ada di
+# device tree A37f basis 9.0, jadi bukan sesuatu yang perangkat ini pernah
+# punya. Partisi tetap muat tanpa ini.
+TW_INCLUDE_FUSE_NTFS := false
 
 # Recovery
 # Di layout 12.1 /etc adalah SYMLINK ke /system/etc. Menaruh direktori
@@ -109,7 +131,11 @@ TW_THEME := portrait_hdpi
 TW_MAX_BRIGHTNESS := 100
 TW_DEFAULT_BRIGHTNESS := "70"
 TW_BRIGHTNESS_PATH := "/sys/class/leds/lcd-backlight/brightness"
-TW_EXTRA_LANGUAGES := true
+# Bahasa tambahan dimatikan demi ruang: twres/languages berisi 23 berkas,
+# 1,2 MB tak terkompresi. Dengan LZMA (wajib, kernel tidak punya RD_XZ) image
+# melewati batas partisi 33.554.432 B sebesar 485.376 B. Ini pangkasan paling
+# besar yang murni kosmetik.
+TW_EXTRA_LANGUAGES := false
 TW_DEFAULT_LANGUAGE := en-US
 TW_NO_SCREEN_TIMEOUT := true
 TW_NO_EXFAT := false
