@@ -67,8 +67,31 @@ TARGET_OTA_ASSERT_DEVICE := a37f,A37f,A37fw,a37fw,msm8916,msm8939
 TW_INCLUDE_CRYPTO := true
 TARGET_CRYPTFS_HW_PATH := vendor/qcom/opensource/commonsys/cryptfs_hw
 
+# FBE. REDUNDAN secara teknis: bootable/recovery/Android.mk:347-358 sudah
+# menyetel TW_INCLUDE_CRYPTO_FBE sendiri begitu TW_INCLUDE_CRYPTO=true dan
+# PLATFORM_SDK_VERSION >= 24 (twrp-9.0 adalah SDK 28). Ditulis eksplisit karena
+# syarat itu bergantung pada versi SDK lingkungan build, bukan pada niat kita --
+# dan supaya jelas bahwa FBE memang disengaja, bukan efek samping.
+#
+# Yang ditariknya: crypto/ext4crypt, yang menaut
+# android.hardware.keymaster@3.0 (crypto/ext4crypt/Android.mk:20) -- persis HAL
+# yang dimiliki A37, terverifikasi berjalan di perangkat.
+#
+# Jalur yang dipakai Ext4CryptPie (crypto/ext4crypt/Decrypt.cpp:19,165), dan
+# NAME_PREFIXES-nya { "ext4", "f2fs", "fscrypt" }
+# (crypto/ext4crypt/KeyUtil.cpp:103) IDENTIK dengan vold Android 16
+# (system/vold/KeyUtil.cpp:142). Tipe kunci sama (logon), format nama sama
+# (prefix:hex), dan keduanya bicara ke kernel fscrypt v1 yang sama.
+TW_INCLUDE_CRYPTO_FBE := true
+
 # Recovery
 TARGET_USERIMAGES_USE_EXT4 := true
+# Tanpa ini mkfs.f2fs dan fsck.f2fs TIDAK ikut dibangun
+# (bootable/recovery/Android.mk:581-585), sehingga TWRP tidak bisa memformat
+# /data menjadi f2fs -- padahal f2fs adalah satu-satunya filesystem yang
+# tersambung ke fscrypt di kernel kita (fs/f2fs/super.c:1222; fs/ext4/ nol
+# dukungan enkripsi).
+TARGET_USERIMAGES_USE_F2FS := true
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/recovery/root/etc/twrp.fstab
 BOARD_HAS_NO_SELECT_BUTTON := true
 TARGET_RECOVERY_PIXEL_FORMAT := "RGBA_8888"

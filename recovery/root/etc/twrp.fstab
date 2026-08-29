@@ -6,7 +6,22 @@
 /dev/block/bootdevice/by-name/system         /system           ext4  
 /dev/block/bootdevice/by-name/system         /system_image     emmc
 /dev/block/bootdevice/by-name/persist        /persist          ext4  defaults  flags=display="Persist";backup=1
-/dev/block/bootdevice/by-name/userdata       /data             ext4  defaults  length=-16384,encryptable=footer
+# FBE, bukan FDE. length=-16384 dan encryptable=footer dibuang: keduanya milik
+# FDE (menyisihkan ruang footer di ujung partisi), dan FDE sudah tidak didukung
+# Android 16 sama sekali -- fstab yang memakai forceencrypt= langsung ditolak
+# (system/core/fs_mgr/libfstab/fstab.cpp:243).
+#
+# f2fs, bukan ext4: fs/ext4/ di kernel kita nol dukungan enkripsi. TWRP tetap
+# mendeteksi filesystem sebenarnya lewat blkid (partition.cpp:2112), jadi /data
+# yang MASIH ext4 tetap bisa di-mount sebelum transisi. Tipe di sini menentukan
+# apa yang dibuat TWRP saat Format Data.
+#
+# Tanpa sufiks ":v1" -- parser TWRP 9.0 memecah pada titik dua PERTAMA
+# (partition.cpp:904-918) lalu menyetel fbe.contents dan fbe.filenames, jadi
+# ":v1" akan mengotori nilai filenames. Sufiks itu hanya untuk fstab LOS.
+# aes-256-cts WAJIB ditulis eksplisit: default TWRP adalah aes-256-heh
+# (crypto/ext4crypt/Ext4CryptPie.cpp:301), yang bukan dipakai Android.
+/dev/block/bootdevice/by-name/userdata       /data             f2fs  defaults  fileencryption=aes-256-xts:aes-256-cts
 /dev/block/bootdevice/by-name/cache          /cache            ext4
 /dev/block/bootdevice/by-name/aboot          /aboot            emmc  defaults  flags=display="ABoot";backup=1;
 /dev/block/bootdevice/by-name/boot           /boot             emmc  defaults  flags=display="Boot";backup=1
