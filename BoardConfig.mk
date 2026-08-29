@@ -195,17 +195,25 @@ TARGET_USES_LOGD := true
 TWRP_INCLUDE_LOGCAT := true
 TWRP_EVENT_LOGGING := true
 
-# MTP dimatikan. TWRP menyalakannya otomatis saat boot (twrp.cpp:250-259,
-# default tw_mtp_enabled = "1" di data.cpp:929), dan Enable_MTP() di
-# partitionmanager.cpp menyetel sys.usb.config ke "none" lebih dulu sebelum
-# mengikatnya ulang sebagai "mtp,adb". Menyetel "none" merobohkan SELURUH gadget
-# USB termasuk adb. Itu cocok dengan gejala yang terpantau: adb terdeteksi saat
-# masuk recovery lalu jatuh ke offline sekitar lima detik kemudian, persis
-# setelah UI selesai start.
-# adb push/pull tetap tersedia sebagai pengganti pemindahan berkas.
-TW_EXCLUDE_MTP := true
-
+# MTP AKTIF, lewat jalur /dev/mtp_usb (MtpDevHandle), bukan FunctionFS.
+#
+# MtpServer.cpp:122 memilih otomatis: kalau /dev/usb-ffs/mtp/ep0 bisa ditulis
+# ia memakai MtpFfsHandle, kalau tidak memakai MtpDevHandle. init.rc TWRP
+# hanya me-mount instance functionfs "adb" dan "fastboot" (etc/init.rc:149-153),
+# jadi jalur MtpDevHandle yang terpilih -- dan itu memang yang cocok untuk
+# kernel ini, yang menyediakan f_mtp di /dev/mtp_usb.
+#
+# JANGAN me-mount /dev/usb-ffs/mtp. Gadget android kernel ini hanya punya SATU
+# struct functionfs_config dengan satu 'struct ffs_data *data'
+# (drivers/usb/gadget/android.c), dan functionfs_ready_callback() menimpanya
+# tanpa syarat. Instance FFS yang menulis deskriptor terakhir menendang yang
+# sebelumnya keluar dari gadget -- itulah yang dulu mematikan adb.
+#
+# Kegagalan "Failed to start usb driver!" sebelumnya bukan soal MTP-nya, tapi
+# bug open ganda di MtpDevHandle::start(); lihat tambalan
+# patches-twrp121/0003.
 TW_EXCLUDE_APEX := true
+
 BOARD_ALWAYS_INSECURE := true
 
 # FBE
