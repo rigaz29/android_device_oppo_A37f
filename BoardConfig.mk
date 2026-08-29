@@ -136,12 +136,28 @@ TW_BRIGHTNESS_PATH := "/sys/class/leds/lcd-backlight/brightness"
 # melewati batas partisi 33.554.432 B sebesar 485.376 B. Ini pangkasan paling
 # besar yang murni kosmetik.
 TW_EXTRA_LANGUAGES := false
-TW_DEFAULT_LANGUAGE := en-US
+# Berkas bahasanya bernama en.xml, BUKAN en-US.xml. Menyetel "en-US"
+# membuat pages.cpp:1325 mencari /twres/languages/en-US.xml yang tidak ada,
+# menghasilkan dua error di log (fallback ke en.xml di pages.cpp:1361
+# menyelamatkan tampilan, jadi dampaknya kosmetik). Default bawaan TWRP
+# memang sudah "en" (Android.mk:427), jadi nilai ini disetel eksplisit ke en.
+# Catatan: a6010 memakai "en-US" dan mengalami error yang sama.
+TW_DEFAULT_LANGUAGE := en
 TW_NO_SCREEN_TIMEOUT := true
 TW_NO_EXFAT := false
 TW_NO_USB_STORAGE := false
 TW_USE_TOOLBOX := true
-TW_IGNORE_ABS_MT_TRACKING_ID := true
+# TW_IGNORE_ABS_MT_TRACKING_ID SENGAJA TIDAK DISETEL.
+# synaptics-s3203 adalah multitouch tipe B: report/input-devices.txt mencatat
+# ABS=2658000 0, yang setelah didekode (word tinggi ditulis lebih dulu) berarti
+# bit 47 ABS_MT_SLOT, 48 TOUCH_MAJOR, 50 WIDTH_MAJOR, 53 POSITION_X,
+# 54 POSITION_Y, dan 57 ABS_MT_TRACKING_ID. Tipe B menandai jari diangkat
+# lewat TRACKING_ID = -1.
+#
+# Dengan flag itu menyala, minuitwrp/events.cpp:617 melakukan `return 1` di
+# case ABS_MT_TRACKING_ID sebelum sempat mencapai blok `if (ev->value < 0)`
+# yang menyetel touchReleaseOnNextSynReport. Akibatnya pelepasan sentuhan tidak
+# pernah terdaftar: layar tampak menekan sendiri dan sentuhan asli sulit masuk.
 # lis3dh-accel diblokir bersama hbtp_vm. Keduanya TERBUKTI ada di A37 --
 # report/input-devices.txt mencatat sembilan perangkat input: synaptics-s3203,
 # synaptics-s3203-kpd, hbtp_vm, compass, lis3dh-accel, light, proximity,
@@ -157,12 +173,37 @@ TW_IGNORE_ABS_MT_TRACKING_ID := true
 #
 # WHITELIST_INPUT bukan alternatif: ia hanya menerima SATU nama perangkat
 # (events.cpp:236), sehingga tombol fisik ikut diabaikan.
-TW_INPUT_BLACKLIST := "hbtp_vm\nlis3dh-accel"
+# compass, light, dan proximity ikut diblokir. events.cpp:241-259 hanya
+# mencocokkan NAMA perangkat -- tidak ada penyaringan berdasar kemampuan --
+# sehingga setiap perangkat yang tidak diblokir ikut dibaca sebagai masukan.
+# compass (event3) melaporkan ABS=7 yaitu ABS_X, ABS_Y, ABS_Z, dan
+# events.cpp:510 menerjemahkan ABS_X langsung menjadi koordinat penunjuk
+# (e->p.x = ev->value). Magnetometer yang mengalir terus itu menyuntikkan
+# koordinat palsu. light dan proximity hanya ABS_MISC/ABS_DISTANCE, tapi
+# tidak ada gunanya dibaca.
+# Yang TETAP dibaca: synaptics-s3203 (sentuh), synaptics-s3203-kpd,
+# qpnp_pon (tombol daya), gpio-keys (tombol volume).
+# Pemisah KOMA, bukan "\n" apalagi "\x0a". Rinciannya ada di tambalan
+# minuitwrp/events.cpp: pada basis soong 12.1, "\x0a" ditolak parser JSON
+# soong.variables, sedangkan "\n" diterjemahkan jadi newline sungguhan yang
+# kemudian dilipat preprocessor sehingga seluruh nama berdempet jadi satu
+# kata. Koma lolos keduanya tanpa berubah.
+TW_INPUT_BLACKLIST := "hbtp_vm,lis3dh-accel,compass,light,proximity"
 
 # Logging -- dibutuhkan untuk mendiagnosis kegagalan dekripsi
 TARGET_USES_LOGD := true
 TWRP_INCLUDE_LOGCAT := true
 TWRP_EVENT_LOGGING := true
+
+# MTP dimatikan. TWRP menyalakannya otomatis saat boot (twrp.cpp:250-259,
+# default tw_mtp_enabled = "1" di data.cpp:929), dan Enable_MTP() di
+# partitionmanager.cpp menyetel sys.usb.config ke "none" lebih dulu sebelum
+# mengikatnya ulang sebagai "mtp,adb". Menyetel "none" merobohkan SELURUH gadget
+# USB termasuk adb. Itu cocok dengan gejala yang terpantau: adb terdeteksi saat
+# masuk recovery lalu jatuh ke offline sekitar lima detik kemudian, persis
+# setelah UI selesai start.
+# adb push/pull tetap tersedia sebagai pengganti pemindahan berkas.
+TW_EXCLUDE_MTP := true
 
 TW_EXCLUDE_APEX := true
 BOARD_ALWAYS_INSECURE := true
