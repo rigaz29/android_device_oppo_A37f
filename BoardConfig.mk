@@ -30,13 +30,41 @@ TARGET_BOARD_PLATFORM_GPU := qcom-adreno306
 TARGET_BOOTLOADER_BOARD_NAME := MSM8916
 TARGET_NO_BOOTLOADER := true
 
-# Arsitektur -- kernel arm64, userspace 32-bit
-TARGET_BOARD_SUFFIX := _32
-TARGET_ARCH := arm
+# Arsitektur -- kernel arm64, userspace 64-bit (14 September 2026)
+#
+# Sebelumnya userspace-nya 32-bit di atas kernel arm64. Itu berfungsi, tetapi
+# membuat recovery ini MENOLAK paket GApps arm64: installer MindTheGapps
+# membaca "getprop ro.bionic.arch" dari lingkungan RECOVERY, bukan dari ROM,
+# lalu membandingkannya dengan arsitektur paket dan berhenti bila berbeda
+# (META-INF/com/google/android/update-binary:131-135). Properti itu berasal
+# langsung dari build system: build/make/core/main.mk menyetel
+# ro.bionic.arch=$(TARGET_ARCH). Jadi selama TARGET_ARCH := arm, recovery ini
+# akan selalu melaporkan "arm" walau ROM yang terpasang arm64.
+#
+# Kernelnya sendiri sudah sanggup: biner arm64 diuji berjalan di recovery
+# 32-bit lama (toybox aarch64 bawaan paket GApps, exit=0).
+#
+# MURNI 64-BIT, tanpa TARGET_2ND_ARCH. Alasannya: ramdisk recovery hanya
+# memuat pustaka untuk arch utama, jadi arch kedua tidak akan punya runtime
+# dan hanya menambah ukuran tanpa guna. Konsekuensinya prebuilt 32-bit di
+# recovery/root/ harus diganti varian 64-bit -- lihat catatan di device.mk.
+#
+# CONFIG_KEYS_COMPAT yang dibahas di bawah menjadi TIDAK relevan lagi untuk
+# recovery ini: ia hanya dibutuhkan ketika keyctl() dipanggil dari userspace
+# 32-bit. Kernelnya tetap memilikinya dan itu tidak mengganggu.
+TARGET_BOARD_SUFFIX := _64
+TARGET_ARCH := arm64
 TARGET_ARCH_VARIANT := armv8-a
-TARGET_CPU_ABI := armeabi-v7a
-TARGET_CPU_ABI2 := armeabi
+TARGET_CPU_ABI := arm64-v8a
 TARGET_CPU_VARIANT := cortex-a53
+
+# Wajib begitu TARGET_ARCH menjadi arm64. board_config.mk:244-249 menolak build
+# kalau produk 64-bit tidak menyatakan sikapnya soal aplikasi 64-bit, dan
+# omni_A37f mewarisi aosp_base_telephony yang produk 32-bit-app. Untuk recovery
+# jawabannya memang "false": ramdisk ini tidak menjalankan aplikasi Android sama
+# sekali, hanya biner native. Nilai ini TIDAK memengaruhi arsitektur biner
+# recovery -- itu ditentukan TARGET_ARCH di atas.
+TARGET_SUPPORTS_64_BIT_APPS := false
 
 PRODUCT_ENFORCE_VINTF_MANIFEST_OVERRIDE := true
 PRODUCT_VENDOR_MOVE_ENABLED := true

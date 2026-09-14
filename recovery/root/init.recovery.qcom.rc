@@ -73,19 +73,21 @@ on init
 
     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor interactive
 
-service vm_bms /system/bin/vm_bms
-    user root
-    group root
-    seclabel u:r:init:s0
-
-# LD_LIBRARY_PATH diset eksplisit: pustaka QSEECom ada di /vendor/lib pada
-# ramdisk ini, di luar jalur pencarian bawaan.
-service qseecomd /system/bin/qseecomd
-    user root
-    group root
-    setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib:/system/lib64:/system/lib
-    disabled
-    seclabel u:r:recovery:s0
+# vm_bms dan qseecomd DIBUANG 14 September 2026, saat recovery ini menjadi
+# 64-bit. Keduanya blob vendor dari ROM stock dan hanya ada dalam bentuk
+# 32-bit; ramdisk 64-bit ini tidak memuat linker maupun pustaka 32-bit, jadi
+# keduanya mustahil dieksekusi dan hanya akan membuat init mencatat kegagalan.
+#
+# qseecomd toh sudah "disabled" dan tidak pernah di-start: jalur dekripsi
+# perangkat ini memakai keymaster/gatekeeper SOFTWARE, dan tidak satu pun dari
+# keduanya menaut libQSEEComAPI (diperiksa dengan readelf). Pustaka QSEECom di
+# vendor/lib ikut dibuang karena hanya qseecomd yang memakainya.
+#
+# vm_bms memang sempat berjalan di recovery 32-bit, tetapi TWRP membaca
+# kapasitas dari /sys/class/power_supply/battery/capacity, bukan dari .../bms/.
+# PERLU DIPERIKSA setelah flash: apakah persentase baterai masih tampil benar.
+# Blok chmod/chown untuk /dev/vm_bms dan sysfs bms di atas sengaja dibiarkan --
+# tidak berbahaya, dan memudahkan mengembalikannya kalau ternyata dibutuhkan.
 
 service gatekeeper-1-0 /system/bin/android.hardware.gatekeeper@1.0-service.software
     user root
