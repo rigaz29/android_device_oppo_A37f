@@ -54,7 +54,7 @@ TARGET_USES_64_BIT_BINDER := true
 # ramdisk tumpang tindih dengan kernel dan isinya rusak. Ubah keduanya atau
 # tidak sama sekali.
 BOARD_KERNEL_BASE := 0x80000000
-BOARD_KERNEL_CMDLINE := console=ttyHSL0,115200,n8 androidboot.console=ttyHSL0 androidboot.hardware=qcom ehci-hcd.park=3 androidboot.bootdevice=7824900.sdhci lpm_levels.sleep_disabled=1 androidboot.selinux=permissive ramoops.mem_address=0x9ff00000 ramoops.mem_size=0x400000 ramoops.record_size=0x40000 ramoops.console_size=0x100000 ramoops.pmsg_size=0x40000 ramoops.dump_oops=1 ramoops.ecc=1
+BOARD_KERNEL_CMDLINE := console=ttyHSL0,115200,n8 androidboot.console=ttyHSL0 androidboot.hardware=qcom ehci-hcd.park=3 androidboot.bootdevice=7824900.sdhci lpm_levels.sleep_disabled=1 androidboot.selinux=permissive ramoops.mem_address=0x9ff00000 ramoops.mem_size=0x400000 ramoops.record_size=0x40000 ramoops.console_size=0x100000 ramoops.pmsg_size=0x40000 ramoops.dump_oops=1 ramoops.ecc=32
 BOARD_KERNEL_PAGESIZE := 2048
 BOARD_KERNEL_TAGS_OFFSET := 0x00000100
 BOARD_RAMDISK_OFFSET := 0x02000000
@@ -128,8 +128,16 @@ BOARD_HAS_NO_SELECT_BUTTON := true
 BOARD_SUPPRESS_SECURE_ERASE := true
 RECOVERY_SDCARD_ON_DATA := true
 TW_THEME := portrait_hdpi
-TW_MAX_BRIGHTNESS := 100
-TW_DEFAULT_BRIGHTNESS := "70"
+# TW_MAX_BRIGHTNESS DICABUT. Ia MENIMPA deteksi otomatis: data.cpp:867-877
+# membaca /sys/class/leds/lcd-backlight/max_brightness sendiri kalau flag ini
+# tidak diset. Panel ini melaporkan 255, sedangkan flag menyetel 100 -- jadi
+# kecerahan "100%" di TWRP sebenarnya hanya menulis 100 dari 255, sekitar 39%
+# kemampuan panel. Nilai 100 itu warisan device tree TWRP 9.0, tanpa alasan
+# yang tercatat.
+#
+# TW_DEFAULT_BRIGHTNESS ikut disesuaikan: 70 dari 100 = 70%, maka setara
+# 178 dari 255.
+TW_DEFAULT_BRIGHTNESS := "178"
 TW_BRIGHTNESS_PATH := "/sys/class/leds/lcd-backlight/brightness"
 # Bahasa tambahan dimatikan demi ruang: twres/languages berisi 23 berkas,
 # 1,2 MB tak terkompresi. Dengan LZMA (wajib, kernel tidak punya RD_XZ) image
@@ -143,7 +151,27 @@ TW_EXTRA_LANGUAGES := false
 # memang sudah "en" (Android.mk:427), jadi nilai ini disetel eksplisit ke en.
 # Catatan: a6010 memakai "en-US" dan mengalami error yang sama.
 TW_DEFAULT_LANGUAGE := en
-TW_NO_SCREEN_TIMEOUT := true
+# TW_NO_SCREEN_TIMEOUT DICABUT.
+#
+# Gejalanya di perangkat: TWRP tidak pernah tidur dan menu Settings tidak
+# memuat pilihan screen timeout sama sekali. Keduanya berasal dari flag ini --
+# ia menggerbang tiga tempat: gui.cpp:122 (logika timeout), blanktimer.cpp
+# (timernya), dan data.cpp:32,258 (variabel tw_screen_timeout_secs, yang
+# karena itu tidak pernah ada sehingga menunya kosong).
+#
+# Baris ini SEBELUMNYA TIDAK PUNYA KOMENTAR sama sekali, berbeda dari seluruh
+# baris di sekitarnya -- penanda bahwa ia warisan device tree TWRP 9.0, bukan
+# keputusan untuk perangkat ini. Kedua pohon rujukan a6010 juga tidak
+# menyetelnya.
+#
+# Aman dicabut karena mekanismenya BUKAN blank panel. blanktimer.cpp:129-131
+# hanya menyimpan kecerahan lalu menulis "0" ke TW_BRIGHTNESS_PATH; tidak ada
+# FBIOBLANK maupun fb0/blank, jadi tidak ada risiko panel gagal menyala lagi.
+# Jalurnya sudah terverifikasi ada dan writable di perangkat.
+#
+# Komentar di blanktimer.cpp:122 menjelaskan maksud aslinya: "Assume screen-off
+# causes issues for devices that set TW_NO_SCREEN_TIMEOUT". Perangkat ini tidak
+# punya masalah itu.
 TW_NO_EXFAT := false
 TW_NO_USB_STORAGE := false
 TW_USE_TOOLBOX := true
