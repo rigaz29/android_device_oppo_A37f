@@ -12,7 +12,7 @@
 # Kernel A37 hanya punya kebijakan fscrypt v1 (fs/crypto/ tanpa keyring.c dan
 # hkdf.c), dan itu dinyatakan lewat TW_USE_FSCRYPT_POLICY := 1 di BoardConfig.
 
-/dev/block/bootdevice/by-name/system         /system      ext4    ro,discard                                                  wait
+/dev/block/bootdevice/by-name/system         /system      ext4    ro,discard                                                  wait,formattable
 /dev/block/bootdevice/by-name/userdata       /data        f2fs    nosuid,nodev,noatime,inline_xattr                           wait,check,formattable,fileencryption=aes-256-xts:aes-256-cts:v1
 /dev/block/bootdevice/by-name/cache          /cache       ext4    noatime,nosuid,nodev,barrier=1,noauto_da_alloc              wait,check,formattable
 /dev/block/bootdevice/by-name/persist        /persist     ext4    noatime,nosuid,nodev,barrier=1,noauto_da_alloc              wait
